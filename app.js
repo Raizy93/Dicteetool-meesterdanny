@@ -49,7 +49,6 @@ const faseKlaar       = $('fase-klaar');
 const countdownGetal  = $('countdown-getal');
 const ringFg          = $('ring-fg');
 const btnAntwoord     = $('btn-antwoord');
-const antwoordWoord   = $('antwoord-woord');
 const btnVolgende     = $('btn-volgende');
 const btnStop         = $('btn-stop');
 const btnOpnieuw      = $('btn-opnieuw');
@@ -254,7 +253,8 @@ function naarSetup() {
   verbergAlleFases();
   flitsPanel.hidden = true;
   setupPanel.hidden = false;
-  flitsWoord.classList.remove('zichtbaar');
+  flitsWoord.classList.remove('zichtbaar', 'antwoord');
+  flitsScherm.classList.remove('antwoord-modus');
   flitsWoord.textContent = '';
 }
 
@@ -262,7 +262,8 @@ btnOpnieuw.addEventListener('click', () => {
   stopCountdown();
   bouwSessie();
   verbergAlleFases();
-  flitsWoord.classList.remove('zichtbaar');
+  flitsWoord.classList.remove('zichtbaar', 'antwoord');
+  flitsScherm.classList.remove('antwoord-modus');
   flitsWoord.textContent = '';
   toonFlits();
 });
@@ -270,7 +271,8 @@ btnOpnieuw.addEventListener('click', () => {
 btnOpnieuwKlaar.addEventListener('click', () => {
   bouwSessie();
   verbergAlleFases();
-  flitsWoord.classList.remove('zichtbaar');
+  flitsWoord.classList.remove('zichtbaar', 'antwoord');
+  flitsScherm.classList.remove('antwoord-modus');
   toonFlits();
 });
 
@@ -299,7 +301,8 @@ function toonFlits() {
   flitsWoord.classList.add('zichtbaar');
 
   setTimeout(() => {
-    flitsWoord.classList.remove('zichtbaar');
+    flitsWoord.classList.remove('zichtbaar', 'antwoord');
+  flitsScherm.classList.remove('antwoord-modus');
     faseWacht.hidden = false;
     startCountdown(state.pauze);
   }, state.flitsduur * 1000);
@@ -339,8 +342,10 @@ function stopCountdown() {
 btnAntwoord.addEventListener('click', () => {
   stopCountdown();
   const woord = state.sessieLijst[state.huidigIndex];
-  antwoordWoord.textContent = woord;
-  faseWacht.hidden   = true;
+  flitsWoord.textContent = woord;
+  flitsWoord.classList.add('zichtbaar', 'antwoord');
+  flitsScherm.classList.add('antwoord-modus');
+  faseWacht.hidden    = true;
   faseAntwoord.hidden = false;
   progressbar.style.width = `${((state.huidigIndex + 1) / state.sessieLijst.length) * 100}%`;
 });
@@ -351,13 +356,15 @@ btnVolgende.addEventListener('click', () => {
   if (state.huidigIndex >= state.sessieLijst.length) {
     // Klaar
     verbergAlleFases();
-    flitsWoord.classList.remove('zichtbaar');
+    flitsWoord.classList.remove('zichtbaar', 'antwoord');
+  flitsScherm.classList.remove('antwoord-modus');
     progressbar.style.width = '100%';
     voortgangTekst.textContent = `${state.sessieLijst.length} / ${state.sessieLijst.length}`;
     faseKlaar.hidden = false;
     return;
   }
-  flitsWoord.classList.remove('zichtbaar');
+  flitsWoord.classList.remove('zichtbaar', 'antwoord');
+  flitsScherm.classList.remove('antwoord-modus');
   toonFlits();
 });
 

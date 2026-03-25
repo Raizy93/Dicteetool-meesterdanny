@@ -1,5 +1,6 @@
 /* ── Reset & base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 
 :root {
   --accent:      #1a4f8a;
@@ -346,22 +347,13 @@ input[type="range"] {
 }
 #flits-woord.zichtbaar { visibility: visible; }
 
-/* ── Antwoord display ── */
-#antwoord-display {
-  min-height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Antwoord: woord zichtbaar in groene flitsbox */
+#flits-scherm.antwoord-modus {
   background: var(--green-light);
-  border: 3px solid #a8d8bb;
-  border-radius: 14px;
-  margin-bottom: 1.2rem;
+  border-color: #a8d8bb;
 }
-#antwoord-woord {
-  font-size: clamp(60px, 8vw, 96px);
-  font-weight: 800;
+#flits-woord.antwoord {
   color: var(--green);
-  letter-spacing: .03em;
 }
 
 /* ── Fase containers ── */
@@ -432,12 +424,15 @@ input[type="range"] {
 
 /* ── Mascotte in header ── */
 .header-titel-rij {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .5rem;
+  position: relative;
+  text-align: center;
 }
 .mascotte-header {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: .6rem;
   height: 72px;
   width: auto;
   pointer-events: none;
