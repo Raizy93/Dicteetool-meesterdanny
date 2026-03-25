@@ -9,8 +9,14 @@
 <body>
 
   <header>
-    <h1>Dictee Flitser</h1>
-    <p class="subtitle">Groep 7 &amp; 8</p>
+    <div class="header-inner">
+      <img src="logo.png" alt="MeesterDanny" class="header-logo" />
+      <div class="header-title">
+        <h1>Dictee Flitser</h1>
+        <p class="subtitle">Groep 7 &amp; 8</p>
+      </div>
+      <div class="header-spacer"></div>
+    </div>
   </header>
 
   <main>
@@ -30,10 +36,16 @@
 
       <!-- Tab: Categorieën -->
       <div class="tab-panel active" id="panel-categorie" role="tabpanel" aria-labelledby="tab-categorie">
-        <label for="categorie-select">Kies een categorie</label>
-        <select id="categorie-select">
-          <option value="">— laden… —</option>
-        </select>
+        <div class="categorie-header-row">
+          <span class="categorie-label">Kies één of meerdere categorieën</span>
+          <div class="categorie-acties">
+            <button id="btn-alles" class="btn btn-ghost btn-small">Alles</button>
+            <button id="btn-geen" class="btn btn-ghost btn-small">Wis</button>
+          </div>
+        </div>
+        <div id="categorie-lijst" class="categorie-lijst" role="group" aria-label="Categorieën">
+          <!-- gevuld via JS -->
+        </div>
         <p id="categorie-preview" class="preview-text"></p>
       </div>
 

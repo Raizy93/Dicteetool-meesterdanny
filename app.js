@@ -20,8 +20,10 @@ const tabCategorie    = $('tab-categorie');
 const tabEigen        = $('tab-eigen');
 const panelCategorie  = $('panel-categorie');
 const panelEigen      = $('panel-eigen');
-const categorieSelect = $('categorie-select');
+const categorieLijst  = $('categorie-lijst');
 const categoriePreview= $('categorie-preview');
+const btnAlles        = $('btn-alles');
+const btnGeen         = $('btn-geen');
 const eigenInvoerWrap = $('eigen-invoer-wrap');
 const eigenInvoer     = $('eigen-invoer');
 const btnVergrendel   = $('btn-vergrendel');
@@ -60,22 +62,67 @@ async function laadWoorden() {
     const resp = await fetch('woorden.json');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     state.woordenbank = await resp.json();
-    vulCategorieSelect();
+    vulCategorieCheckboxes();
   } catch (e) {
-    categorieSelect.innerHTML = '<option value="">⚠ Kon woorden.json niet laden</option>';
+    categorieLijst.innerHTML = '<p style="padding:.8rem 1rem;color:var(--danger)">⚠ Kon woorden.json niet laden</p>';
     console.error('Fout bij laden woorden.json:', e);
   }
 }
 
-function vulCategorieSelect() {
-  categorieSelect.innerHTML = '<option value="">— Kies een categorie —</option>';
+function vulCategorieCheckboxes() {
+  categorieLijst.innerHTML = '';
   state.woordenbank.forEach((cat, index) => {
-    const opt = document.createElement('option');
-    opt.value = index;
-    opt.textContent = `${cat.naam} — ${cat.regel}`;
-    categorieSelect.appendChild(opt);
+    const label = document.createElement('label');
+    label.className = 'cat-item';
+    label.htmlFor = `cat-${index}`;
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = `cat-${index}`;
+    cb.value = index;
+    cb.addEventListener('change', onCheckboxChange);
+
+    const tekst = document.createElement('span');
+    tekst.className = 'cat-item-tekst';
+    tekst.innerHTML = `<span class="cat-naam">${cat.naam}</span><span class="cat-regel">${cat.regel}</span>`;
+
+    label.appendChild(cb);
+    label.appendChild(tekst);
+    categorieLijst.appendChild(label);
   });
   updateAantalMax();
+}
+
+function onCheckboxChange() {
+  // Highlight rij
+  categorieLijst.querySelectorAll('.cat-item').forEach(item => {
+    item.classList.toggle('geselecteerd', item.querySelector('input').checked);
+  });
+  updateActieveLijst();
+}
+
+function getGekozenWoorden() {
+  const gekozen = [];
+  categorieLijst.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+    const cat = state.woordenbank[cb.value];
+    if (cat) cat.woorden.forEach(w => { if (!gekozen.includes(w)) gekozen.push(w); });
+  });
+  return gekozen;
+}
+
+function updateActieveLijst() {
+  state.actiefeLijst = getGekozenWoorden();
+  const n = state.actiefeLijst.length;
+  const aantalGekozen = categorieLijst.querySelectorAll('input:checked').length;
+  if (aantalGekozen === 0) {
+    categoriePreview.textContent = '';
+  } else if (aantalGekozen === 1) {
+    categoriePreview.textContent = `${n} woorden geselecteerd`;
+  } else {
+    categoriePreview.textContent = `${aantalGekozen} categorieën · ${n} woorden geselecteerd`;
+  }
+  updateAantalMax();
+  updateStartKnop();
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -93,20 +140,17 @@ function activeerTab(modus) {
 tabCategorie.addEventListener('click', () => activeerTab('categorie'));
 tabEigen.addEventListener('click',     () => activeerTab('eigen'));
 
-// ── Categorie selectie ────────────────────────────────────────────────────
-categorieSelect.addEventListener('change', () => {
-  const index = categorieSelect.value;
-  const cat = state.woordenbank[index];
-  if (index !== '' && cat) {
-    state.actiefeLijst = cat.woorden;
-    const n = cat.woorden.length;
-    categoriePreview.textContent = `${n} woorden — bijv.: ${cat.woorden.slice(0, 4).join(', ')}…`;
-  } else {
-    state.actiefeLijst = [];
-    categoriePreview.textContent = '';
-  }
-  updateAantalMax();
-  updateStartKnop();
+// ── Alles / Wis knoppen ───────────────────────────────────────────────────
+btnAlles.addEventListener('click', () => {
+  categorieLijst.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+  categorieLijst.querySelectorAll('.cat-item').forEach(item => item.classList.add('geselecteerd'));
+  updateActieveLijst();
+});
+
+btnGeen.addEventListener('click', () => {
+  categorieLijst.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+  categorieLijst.querySelectorAll('.cat-item').forEach(item => item.classList.remove('geselecteerd'));
+  updateActieveLijst();
 });
 
 // ── Eigen woorden ─────────────────────────────────────────────────────────
