@@ -291,6 +291,17 @@ function verbergAlleFases() {
   faseKlaar.hidden   = true;
 }
 
+// ── Automatisch schalen van lang woord ────────────────────────────────────
+function schaalWoord() {
+  flitsWoord.style.fontSize = '';                          // reset naar CSS-waarde
+  const beschikbaar = flitsScherm.clientWidth - 48;       // 24px buffer aan elke kant
+  if (flitsWoord.scrollWidth > beschikbaar) {
+    const huidig = parseFloat(getComputedStyle(flitsWoord).fontSize);
+    const nieuw  = Math.max(huidig * (beschikbaar / flitsWoord.scrollWidth), 22);
+    flitsWoord.style.fontSize = nieuw + 'px';
+  }
+}
+
 // ── Flits tonen ───────────────────────────────────────────────────────────
 function toonFlits() {
   verbergAlleFases();
@@ -298,6 +309,7 @@ function toonFlits() {
 
   const woord = state.sessieLijst[state.huidigIndex];
   flitsWoord.textContent = woord;
+  schaalWoord();
   flitsWoord.classList.add('zichtbaar');
 
   setTimeout(() => {
@@ -343,6 +355,7 @@ btnAntwoord.addEventListener('click', () => {
   stopCountdown();
   const woord = state.sessieLijst[state.huidigIndex];
   flitsWoord.textContent = woord;
+  schaalWoord();
   flitsWoord.classList.add('zichtbaar', 'antwoord');
   flitsScherm.classList.add('antwoord-modus');
   faseWacht.hidden    = true;
