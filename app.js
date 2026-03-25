@@ -112,14 +112,19 @@ function getGekozenWoorden() {
 
 function updateActieveLijst() {
   state.actiefeLijst = getGekozenWoorden();
-  const n = state.actiefeLijst.length;
-  const aantalGekozen = categorieLijst.querySelectorAll('input:checked').length;
-  if (aantalGekozen === 0) {
+  const gekozenNamen = [];
+  categorieLijst.querySelectorAll('input:checked').forEach(cb => {
+    const cat = state.woordenbank[cb.value];
+    if (cat) gekozenNamen.push(cat.naam);
+  });
+  const n = gekozenNamen.length;
+  if (n === 0) {
     categoriePreview.textContent = '';
-  } else if (aantalGekozen === 1) {
-    categoriePreview.textContent = `${n} woorden geselecteerd`;
+  } else if (n === 1) {
+    categoriePreview.textContent = `1 categorie: ${gekozenNamen[0]}`;
   } else {
-    categoriePreview.textContent = `${aantalGekozen} categorieën · ${n} woorden geselecteerd`;
+    const lijst = gekozenNamen.slice(0, -1).join(', ') + ' en ' + gekozenNamen[n - 1];
+    categoriePreview.textContent = `${n} categorieën: ${lijst}`;
   }
   updateAantalMax();
   updateStartKnop();

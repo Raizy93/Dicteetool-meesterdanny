@@ -431,38 +431,39 @@ input[type="range"] {
 }
 
 /* ── Mascotte ── */
+.mascotte {
+  display: block;
+  pointer-events: none;
+}
 
-/* Standaard: verborgen */
-.mascotte { display: none; }
+/* Klein scherm: gecentreerd onder de header, boven de card */
+.mascotte {
+  width: 100px;
+  margin: 1.2rem auto 0;
+  opacity: .9;
+  filter: drop-shadow(0 4px 14px rgba(0,0,0,.2));
+}
 
-/* Breed scherm (>1150px): vast rechts naast de card */
-@media (min-width: 1150px) {
+/* Breed genoeg (>1180px): vast rechts naast de card, zweeft op en neer */
+@media (min-width: 1180px) {
   .mascotte {
-    display: block;
     position: fixed;
-    right: calc(50% - 620px);   /* net buiten de rechterrand van de 820px card */
-    bottom: 80px;
-    width: 220px;
-    pointer-events: none;
-    filter: drop-shadow(0 8px 24px rgba(0,0,0,.18));
+    right: 20px;
+    bottom: 50px;
+    width: 180px;
+    margin: 0;
+    filter: drop-shadow(0 8px 28px rgba(0,0,0,.22));
     animation: mascotte-bob 4s ease-in-out infinite;
   }
 }
 
-/* Middensscherm (820–1149px): klein onderaan centraal */
-@media (min-width: 820px) and (max-width: 1149px) {
-  .mascotte {
-    display: block;
-    width: 110px;
-    margin: 1.5rem auto -1rem;
-    opacity: .85;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,.15));
-  }
+@media (min-width: 1400px) {
+  .mascotte { width: 220px; right: 32px; }
 }
 
 @keyframes mascotte-bob {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-12px); }
+  50%       { transform: translateY(-14px); }
 }
 
 /* ── Responsive ── */
