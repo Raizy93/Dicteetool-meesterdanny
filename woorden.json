@@ -1,0 +1,27 @@
+{
+  "Cadeauwoord: Woorden met 'eau' uitgesproken als 'oo'": [
+    "cadeau", "bureau", "tableau", "plateau", "château",
+    "manteau", "bateau", "gâteau", "chapeau", "rideau",
+    "milieu", "niveau", "bijou", "fileau", "bordeau"
+  ],
+  "Koppelteken: Woorden met een koppelteken": [
+    "ijs-co", "auto-ongeluk", "ex-kampioen", "co-auteur", "oud-leerling",
+    "zelf-onderzoek", "hoofd-ingang", "jaar-lijks", "werk-plek", "studie-boek",
+    "school-jaar", "sport-dag", "klas-lokaal", "boek-verslag", "thuis-werk"
+  ],
+  "Tussen-n: Woorden met een tussen-n": [
+    "pannenlap", "hondenlijn", "kattenbak", "muizengat", "vogelnest",
+    "boekenplank", "schilderijen", "bloemenkraam", "kinderwagen", "stationstrein",
+    "appelboom", "berenklauwen", "hoenderhok", "eendenvijver", "vlindertuin"
+  ],
+  "Verdubbeling: Woorden met dubbele medeklinker": [
+    "babbelen", "kabbelen", "rammelen", "sidderde", "ginnegappen",
+    "wapperen", "kletteren", "ploffende", "schudden", "borrelen",
+    "sudderde", "trippelen", "druppelen", "klapperen", "mopperen"
+  ],
+  "Werkwoorden: Lastige vervoeging in verleden tijd": [
+    "schreef", "liep", "stond", "zat", "lag",
+    "hing", "zong", "rook", "vloog", "reed",
+    "greep", "bood", "blies", "wees", "trok"
+  ]
+}

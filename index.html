@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dictee Flitser — Groep 7 &amp; 8</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Dictee Flitser</h1>
+    <p class="subtitle">Groep 7 &amp; 8</p>
+  </header>
+
+  <main>
+
+    <!-- ── SETUP PANEL ── -->
+    <div id="setup-panel">
+
+      <!-- Tabs -->
+      <div class="tabs" role="tablist">
+        <button class="tab active" id="tab-categorie" role="tab" aria-selected="true" aria-controls="panel-categorie">
+          Categorieën
+        </button>
+        <button class="tab" id="tab-eigen" role="tab" aria-selected="false" aria-controls="panel-eigen">
+          Eigen woorden
+        </button>
+      </div>
+
+      <!-- Tab: Categorieën -->
+      <div class="tab-panel active" id="panel-categorie" role="tabpanel" aria-labelledby="tab-categorie">
+        <label for="categorie-select">Kies een categorie</label>
+        <select id="categorie-select">
+          <option value="">— laden… —</option>
+        </select>
+        <p id="categorie-preview" class="preview-text"></p>
+      </div>
+
+      <!-- Tab: Eigen woorden -->
+      <div class="tab-panel" id="panel-eigen" role="tabpanel" aria-labelledby="tab-eigen">
+        <div id="eigen-invoer-wrap">
+          <label for="eigen-invoer">Voer woorden in (één per regel of kommagescheiden)</label>
+          <textarea id="eigen-invoer" rows="6" placeholder="bijv: cadeau, bureau, plateau&#10;of één woord per regel"></textarea>
+          <button id="btn-vergrendel" class="btn btn-secondary">🔒 Vergrendel lijst</button>
+        </div>
+        <div id="eigen-vergrendeld" hidden>
+          <p class="locked-msg">✅ Lijst vergrendeld — leerlingen kunnen de woorden niet zien.</p>
+          <button id="btn-bewerken" class="btn btn-ghost btn-small">✏️ Bewerken</button>
+        </div>
+      </div>
+
+      <!-- Instellingen -->
+      <div class="instellingen">
+        <div class="instelling-groep">
+          <label for="flitsduur">Flitsduur (sec)</label>
+          <div class="range-wrap">
+            <input type="range" id="flitsduur" min="0.2" max="5" step="0.1" value="1.5" />
+            <span id="flitsduur-val">1,5</span>
+          </div>
+        </div>
+        <div class="instelling-groep">
+          <label for="pauze">Pauze na woord (sec)</label>
+          <div class="range-wrap">
+            <input type="range" id="pauze" min="1" max="30" step="1" value="5" />
+            <span id="pauze-val">5</span>
+          </div>
+        </div>
+        <div class="instelling-groep">
+          <label for="aantal">Aantal woorden</label>
+          <div class="range-wrap">
+            <input type="range" id="aantal" min="1" max="15" step="1" value="10" />
+            <span id="aantal-val">10</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-start" class="btn btn-primary btn-large" disabled>▶ Start dictee</button>
+      <p id="start-hint" class="hint-text">Kies een categorie of vergrendel de eigen woordenlijst om te starten.</p>
+
+    </div>
+    <!-- /setup-panel -->
+
+    <!-- ── FLITS PANEL ── -->
+    <div id="flits-panel" hidden>
+
+      <div class="voortgang-balk">
+        <span id="voortgang-tekst">1 / 10</span>
+        <div class="progressbar-wrap">
+          <div id="progressbar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div id="flits-scherm">
+        <span id="flits-woord"></span>
+      </div>
+
+      <div id="fase-wacht" class="fase">
+        <p class="fase-info">Leerlingen schrijven het woord op…</p>
+        <div id="countdown-wrap">
+          <div id="countdown-ring">
+            <svg viewBox="0 0 44 44" class="countdown-svg">
+              <circle cx="22" cy="22" r="18" class="ring-bg"/>
+              <circle cx="22" cy="22" r="18" class="ring-fg" id="ring-fg"/>
+            </svg>
+            <span id="countdown-getal"></span>
+          </div>
+        </div>
+        <button id="btn-antwoord" class="btn btn-secondary btn-large">👁 Toon antwoord</button>
+      </div>
+
+      <div id="fase-antwoord" class="fase" hidden>
+        <div id="antwoord-display">
+          <span id="antwoord-woord"></span>
+        </div>
+        <div class="actie-knoppen">
+          <button id="btn-volgende" class="btn btn-primary btn-large">Volgend woord ▶</button>
+        </div>
+      </div>
+
+      <div id="fase-klaar" class="fase" hidden>
+        <p class="klaar-tekst">🎉 Dictee afgerond!</p>
+        <button id="btn-opnieuw-klaar" class="btn btn-primary btn-large">↺ Opnieuw</button>
+        <button id="btn-terug-klaar" class="btn btn-ghost">← Terug naar instellingen</button>
+      </div>
+
+      <div class="controle-knoppen">
+        <button id="btn-stop" class="btn btn-danger">■ Stop</button>
+        <button id="btn-opnieuw" class="btn btn-ghost">↺ Opnieuw</button>
+      </div>
+
+    </div>
+    <!-- /flits-panel -->
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
