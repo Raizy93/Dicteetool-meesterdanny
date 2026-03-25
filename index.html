@@ -12,7 +12,10 @@
     <div class="header-inner">
       <img src="logo.png" alt="MeesterDanny" class="header-logo" />
       <div class="header-title">
-        <h1>Flits &amp; Check!</h1>
+        <div class="header-titel-rij">
+          <h1>Flits &amp; Check!</h1>
+          <img src="Flits-en-check-mascotte.png" alt="" class="mascotte-header" />
+        </div>
         <p class="subtitle">kijk, schrijf en controleer</p>
       </div>
       <div class="header-spacer"></div>
@@ -108,17 +111,21 @@
       </div>
 
       <div id="fase-wacht" class="fase">
-        <p class="fase-info">Leerlingen schrijven het woord op…</p>
-        <div id="countdown-wrap">
-          <div id="countdown-ring">
-            <svg viewBox="0 0 44 44" class="countdown-svg">
-              <circle cx="22" cy="22" r="18" class="ring-bg"/>
-              <circle cx="22" cy="22" r="18" class="ring-fg" id="ring-fg"/>
-            </svg>
-            <span id="countdown-getal"></span>
+        <img src="writing-quokka.png" alt="" class="quokka quokka-links" />
+        <div class="fase-midden">
+          <p class="fase-info">Leerlingen schrijven het woord op…</p>
+          <div id="countdown-wrap">
+            <div id="countdown-ring">
+              <svg viewBox="0 0 44 44" class="countdown-svg">
+                <circle cx="22" cy="22" r="18" class="ring-bg"/>
+                <circle cx="22" cy="22" r="18" class="ring-fg" id="ring-fg"/>
+              </svg>
+              <span id="countdown-getal"></span>
+            </div>
           </div>
+          <button id="btn-antwoord" class="btn btn-secondary btn-large">👁 Toon antwoord</button>
         </div>
-        <button id="btn-antwoord" class="btn btn-secondary btn-large">👁 Toon antwoord</button>
+        <img src="writing-quokka.png" alt="" class="quokka quokka-rechts" />
       </div>
 
       <div id="fase-antwoord" class="fase" hidden>
@@ -145,8 +152,6 @@
     <!-- /flits-panel -->
 
   </main>
-
-  <img src="Flits-en-check-mascotte.png" alt="Flits & Check mascotte" class="mascotte" />
 
   <script src="app.js"></script>
 </body>

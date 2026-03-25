@@ -430,40 +430,44 @@ input[type="range"] {
   border-top: 1px solid var(--border);
 }
 
-/* ── Mascotte ── */
-.mascotte {
-  display: block;
+/* ── Mascotte in header ── */
+.header-titel-rij {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+}
+.mascotte-header {
+  height: 72px;
+  width: auto;
   pointer-events: none;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,.25));
+}
+@media (max-width: 540px) {
+  .mascotte-header { height: 50px; }
 }
 
-/* Klein scherm: gecentreerd onder de header, boven de card */
-.mascotte {
-  width: 100px;
-  margin: 1.2rem auto 0;
-  opacity: .9;
-  filter: drop-shadow(0 4px 14px rgba(0,0,0,.2));
+/* ── Quokka in schrijffase ── */
+#fase-wacht {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
-
-/* Breed genoeg (>1180px): vast rechts naast de card, zweeft op en neer */
-@media (min-width: 1180px) {
-  .mascotte {
-    position: fixed;
-    right: 20px;
-    bottom: 50px;
-    width: 180px;
-    margin: 0;
-    filter: drop-shadow(0 8px 28px rgba(0,0,0,.22));
-    animation: mascotte-bob 4s ease-in-out infinite;
-  }
+.fase-midden {
+  flex: 1;
+  text-align: center;
 }
-
-@media (min-width: 1400px) {
-  .mascotte { width: 220px; right: 32px; }
+.quokka {
+  width: 150px;
+  flex-shrink: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.15));
 }
-
-@keyframes mascotte-bob {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-14px); }
+.quokka-rechts {
+  transform: scaleX(-1);
+}
+@media (max-width: 640px) {
+  .quokka { display: none; }
 }
 
 /* ── Responsive ── */
