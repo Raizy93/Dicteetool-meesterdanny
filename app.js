@@ -3,7 +3,7 @@
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
   modus: 'categorie',       // 'categorie' | 'eigen'
-  woordenbank: {},          // geladen uit woorden.json
+  woordenbank: [],          // geladen uit woorden.json (array van {naam, regel, woorden})
   actiefeLijst: [],         // gekozen / ingevoerde woorden
   sessieLijst: [],          // willekeurige selectie voor huidige sessie
   eigenVergrendeld: false,
@@ -68,12 +68,11 @@ async function laadWoorden() {
 }
 
 function vulCategorieSelect() {
-  const categorieen = Object.keys(state.woordenbank);
   categorieSelect.innerHTML = '<option value="">— Kies een categorie —</option>';
-  categorieen.forEach(naam => {
+  state.woordenbank.forEach((cat, index) => {
     const opt = document.createElement('option');
-    opt.value = naam;
-    opt.textContent = naam;
+    opt.value = index;
+    opt.textContent = `${cat.naam} — ${cat.regel}`;
     categorieSelect.appendChild(opt);
   });
   updateAantalMax();
@@ -96,11 +95,12 @@ tabEigen.addEventListener('click',     () => activeerTab('eigen'));
 
 // ── Categorie selectie ────────────────────────────────────────────────────
 categorieSelect.addEventListener('change', () => {
-  const key = categorieSelect.value;
-  if (key && state.woordenbank[key]) {
-    state.actiefeLijst = state.woordenbank[key];
-    const n = state.actiefeLijst.length;
-    categoriePreview.textContent = `${n} woorden — bijv.: ${state.actiefeLijst.slice(0,4).join(', ')}…`;
+  const index = categorieSelect.value;
+  const cat = state.woordenbank[index];
+  if (index !== '' && cat) {
+    state.actiefeLijst = cat.woorden;
+    const n = cat.woorden.length;
+    categoriePreview.textContent = `${n} woorden — bijv.: ${cat.woorden.slice(0, 4).join(', ')}…`;
   } else {
     state.actiefeLijst = [];
     categoriePreview.textContent = '';
