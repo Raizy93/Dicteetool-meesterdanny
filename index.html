@@ -1,154 +1,625 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flits &amp; Check!</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
+'use strict';
 
-  <header>
-    <div class="header-inner">
-      <img src="logo.png" alt="MeesterDanny" class="header-logo" />
-      <div class="header-title">
-        <div class="header-titel-rij">
-          <h1>Flits &amp; Check!<img src="Flits-en-check-mascotte.png" alt="" class="mascotte-header" /></h1>
-        </div>
-        <p class="subtitle">kijk, schrijf en controleer</p>
-      </div>
-      <div class="header-spacer"></div>
-    </div>
-  </header>
+/* =================================================================
+   Flits & Check! — logica
+   Functionaliteit identiek aan het origineel; woorden komen nu uit
+   window.WOORDENBANK (woorden.js) i.p.v. een fetch, plus toevoegingen:
+   thema via ?theme=, stippen-voortgang, polaroid-flits en confetti.
+   ================================================================= */
 
-  <main>
+// ── Thema uit URL (warm | polaroid | speels) ────────────────────────────────
+(function initTheme() {
+  const params = new URLSearchParams(location.search);
+  const t = params.get('theme');
+  if (t && ['warm', 'polaroid', 'speels'].includes(t)) {
+    document.documentElement.setAttribute('data-theme', t);
+  }
+})();
 
-    <!-- ── SETUP PANEL ── -->
-    <div id="setup-panel">
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  modus: 'categorie',
+  woordenbank: [],
+  actiefeLijst: [],
+  sessieLijst: [],
+  eigenVergrendeld: false,
+  huidigIndex: 0,
+  flitsduur: 1.5,
+  pauze: 5,
+  aantal: 10,
+  countdownInterval: null,
+  woordRegelMap: {},
+  globaalRegelMap: {},
+};
 
-      <!-- Tabs -->
-      <div class="tabs" role="tablist">
-        <button class="tab active" id="tab-categorie" role="tab" aria-selected="true" aria-controls="panel-categorie">
-          Categorieën
-        </button>
-        <button class="tab" id="tab-eigen" role="tab" aria-selected="false" aria-controls="panel-eigen">
-          Eigen woorden
-        </button>
-      </div>
+// ── DOM-referenties ────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const tabCategorie    = $('tab-categorie');
+const tabEigen        = $('tab-eigen');
+const panelCategorie  = $('panel-categorie');
+const panelEigen      = $('panel-eigen');
+const categorieLijst  = $('categorie-lijst');
+const categoriePreview= $('categorie-preview');
+const btnAlles        = $('btn-alles');
+const btnGeen         = $('btn-geen');
+const eigenInvoerWrap = $('eigen-invoer-wrap');
+const eigenInvoer     = $('eigen-invoer');
+const btnVergrendel   = $('btn-vergrendel');
+const eigenVergrendeld= $('eigen-vergrendeld');
+const btnBewerken     = $('btn-bewerken');
+const sliderFlits     = $('flitsduur');
+const valFlits        = $('flitsduur-val');
+const sliderPauze     = $('pauze');
+const valPauze        = $('pauze-val');
+const sliderAantal    = $('aantal');
+const valAantal       = $('aantal-val');
+const btnStart        = $('btn-start');
+const startHint       = $('start-hint');
+const setupPanel      = $('setup-panel');
+const flitsPanel      = $('flits-panel');
+const voortgangTekst  = $('voortgang-tekst');
+const progressbar     = $('progressbar');
+const voortgangDots   = $('voortgang-dots');
+const flitsScherm     = $('flits-scherm');
+const flitsWoord      = $('flits-woord');
+const flashOverlay    = $('flash-overlay');
+const faseWacht       = $('fase-wacht');
+const faseAntwoord    = $('fase-antwoord');
+const faseKlaar       = $('fase-klaar');
+const countdownGetal  = $('countdown-getal');
+const ringFg          = $('ring-fg');
+const btnAntwoord     = $('btn-antwoord');
+const btnVolgende     = $('btn-volgende');
+const btnStop         = $('btn-stop');
+const btnOpnieuw      = $('btn-opnieuw');
+const btnOpnieuwKlaar = $('btn-opnieuw-klaar');
+const btnTerugKlaar   = $('btn-terug-klaar');
+const klaarScore      = $('klaar-score');
 
-      <!-- Tab: Categorieën -->
-      <div class="tab-panel active" id="panel-categorie" role="tabpanel" aria-labelledby="tab-categorie">
-        <div class="categorie-header-row">
-          <span class="categorie-label">Kies één of meerdere categorieën</span>
-          <div class="categorie-acties">
-            <button id="btn-alles" class="btn btn-ghost btn-small">Alles</button>
-            <button id="btn-geen" class="btn btn-ghost btn-small">Wis</button>
-          </div>
-        </div>
-        <div id="categorie-lijst" class="categorie-lijst" role="group" aria-label="Categorieën">
-          <!-- gevuld via JS -->
-        </div>
-        <p id="categorie-preview" class="preview-text"></p>
-      </div>
+// ── Laden van woorden (uit woorden.js) ──────────────────────────────────────
+function laadWoorden() {
+  if (Array.isArray(window.WOORDENBANK)) {
+    state.woordenbank = window.WOORDENBANK;
+    bouwGlobaleRegelMap();
+    vulCategorieCheckboxes();
+  } else {
+    categorieLijst.innerHTML =
+      '<p style="padding:.9rem 1.1rem;color:var(--md-danger)">⚠ Kon de woordenlijst niet laden</p>';
+    console.error('window.WOORDENBANK ontbreekt');
+  }
+}
 
-      <!-- Tab: Eigen woorden -->
-      <div class="tab-panel" id="panel-eigen" role="tabpanel" aria-labelledby="tab-eigen">
-        <div id="eigen-invoer-wrap">
-          <label for="eigen-invoer">Voer woorden in (één per regel of kommagescheiden)</label>
-          <textarea id="eigen-invoer" rows="6" placeholder="bijv: cadeau, bureau, plateau&#10;of één woord per regel"></textarea>
-          <button id="btn-vergrendel" class="btn btn-secondary">🔒 Vergrendel lijst</button>
-        </div>
-        <div id="eigen-vergrendeld" hidden>
-          <p class="locked-msg">✅ Lijst vergrendeld — leerlingen kunnen de woorden niet zien.</p>
-          <button id="btn-bewerken" class="btn btn-ghost btn-small">✏️ Bewerken</button>
-        </div>
-      </div>
+// Index van álle woorden in de database → spellingregel (genormaliseerd op
+// kleine letters), zodat eigen ingevoerde woorden herkend kunnen worden.
+function normaliseer(w) {
+  return w.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function bouwGlobaleRegelMap() {
+  state.globaalRegelMap = {};
+  state.woordenbank.forEach(cat => {
+    cat.woorden.forEach(w => {
+      const sleutel = normaliseer(w);
+      if (!(sleutel in state.globaalRegelMap)) {
+        state.globaalRegelMap[sleutel] = { naam: cat.naam, regel: cat.regel };
+      }
+    });
+  });
+}
 
-      <!-- Instellingen -->
-      <div class="instellingen">
-        <div class="instelling-groep">
-          <label for="flitsduur">Flitsduur (sec)</label>
-          <div class="range-wrap">
-            <input type="range" id="flitsduur" min="0.2" max="5" step="0.1" value="1.5" />
-            <span id="flitsduur-val">1,5</span>
-          </div>
-        </div>
-        <div class="instelling-groep">
-          <label for="pauze">Pauze na woord (sec)</label>
-          <div class="range-wrap">
-            <input type="range" id="pauze" min="1" max="30" step="1" value="5" />
-            <span id="pauze-val">5</span>
-          </div>
-        </div>
-        <div class="instelling-groep">
-          <label for="aantal">Aantal woorden</label>
-          <div class="range-wrap">
-            <input type="range" id="aantal" min="1" max="15" step="1" value="10" />
-            <span id="aantal-val">10</span>
-          </div>
-        </div>
-      </div>
+function vulCategorieCheckboxes() {
+  categorieLijst.innerHTML = '';
+  state.woordenbank.forEach((cat, index) => {
+    const label = document.createElement('label');
+    label.className = 'cat-item';
+    label.htmlFor = `cat-${index}`;
 
-      <button id="btn-start" class="btn btn-primary btn-large" disabled>▶ Start dictee</button>
-      <p id="start-hint" class="hint-text">Kies een categorie of vergrendel de eigen woordenlijst om te starten.</p>
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = `cat-${index}`;
+    cb.value = index;
+    cb.addEventListener('change', onCheckboxChange);
 
-    </div>
-    <!-- /setup-panel -->
+    const box = document.createElement('span');
+    box.className = 'cat-box';
+    box.setAttribute('aria-hidden', 'true');
 
-    <!-- ── FLITS PANEL ── -->
-    <div id="flits-panel" hidden>
+    const tekst = document.createElement('span');
+    tekst.className = 'cat-item-tekst';
+    tekst.innerHTML =
+      `<span class="cat-naam">${cat.naam}</span>` +
+      `<span class="cat-regel">${cat.regel}</span>`;
 
-      <div class="voortgang-balk">
-        <span id="voortgang-tekst">1 / 10</span>
-        <div class="progressbar-wrap">
-          <div id="progressbar" style="width:0%"></div>
-        </div>
-      </div>
+    const telling = document.createElement('span');
+    telling.className = 'cat-telling';
+    telling.textContent = cat.woorden.length;
 
-      <div id="flits-scherm">
-        <span id="flits-woord"></span>
-      </div>
+    label.appendChild(cb);
+    label.appendChild(box);
+    label.appendChild(tekst);
+    label.appendChild(telling);
+    categorieLijst.appendChild(label);
+  });
+  updateAantalMax();
+}
 
-      <div id="fase-wacht" class="fase">
-        <img src="writing-quokka.png" alt="" class="quokka quokka-links" />
-        <div class="fase-midden">
-          <p class="fase-info">Leerlingen schrijven het woord op…</p>
-          <div id="countdown-wrap">
-            <div id="countdown-ring">
-              <svg viewBox="0 0 44 44" class="countdown-svg">
-                <circle cx="22" cy="22" r="18" class="ring-bg"/>
-                <circle cx="22" cy="22" r="18" class="ring-fg" id="ring-fg"/>
-              </svg>
-              <span id="countdown-getal"></span>
-            </div>
-          </div>
-          <button id="btn-antwoord" class="btn btn-secondary btn-large">👁 Toon antwoord</button>
-        </div>
-        <img src="writing-quokka.png" alt="" class="quokka quokka-rechts" />
-      </div>
+function onCheckboxChange() {
+  categorieLijst.querySelectorAll('.cat-item').forEach(item => {
+    item.classList.toggle('geselecteerd', item.querySelector('input').checked);
+  });
+  updateActieveLijst();
+}
 
-      <div id="fase-antwoord" class="fase" hidden>
-        <div class="actie-knoppen">
-          <button id="btn-volgende" class="btn btn-primary btn-large">Volgend woord ▶</button>
-        </div>
-      </div>
+function getGekozenWoorden() {
+  const gekozen = [];
+  categorieLijst.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+    const cat = state.woordenbank[cb.value];
+    if (cat) cat.woorden.forEach(w => { if (!gekozen.includes(w)) gekozen.push(w); });
+  });
+  return gekozen;
+}
 
-      <div id="fase-klaar" class="fase" hidden>
-        <p class="klaar-tekst">🎉 Dictee afgerond!</p>
-        <button id="btn-opnieuw-klaar" class="btn btn-primary btn-large">↺ Opnieuw</button>
-        <button id="btn-terug-klaar" class="btn btn-ghost">← Terug naar instellingen</button>
-      </div>
+function updateActieveLijst() {
+  state.actiefeLijst = getGekozenWoorden();
+  // koppel elk woord aan de spellingregel van zijn (eerste) gekozen categorie
+  state.woordRegelMap = {};
+  categorieLijst.querySelectorAll('input:checked').forEach(cb => {
+    const cat = state.woordenbank[cb.value];
+    if (cat) cat.woorden.forEach(w => {
+      if (!(w in state.woordRegelMap)) state.woordRegelMap[w] = { naam: cat.naam, regel: cat.regel };
+    });
+  });
+  const gekozenNamen = [];
+  categorieLijst.querySelectorAll('input:checked').forEach(cb => {
+    const cat = state.woordenbank[cb.value];
+    if (cat) gekozenNamen.push(cat.naam);
+  });
+  const n = gekozenNamen.length;
+  if (n === 0) {
+    categoriePreview.textContent = '';
+  } else if (n === 1) {
+    categoriePreview.textContent = `1 categorie · ${state.actiefeLijst.length} woorden`;
+  } else {
+    categoriePreview.textContent = `${n} categorieën · ${state.actiefeLijst.length} woorden`;
+  }
+  updateAantalMax();
+  updateStartKnop();
+}
 
-      <div class="controle-knoppen">
-        <button id="btn-stop" class="btn btn-danger">■ Stop</button>
-        <button id="btn-opnieuw" class="btn btn-ghost">↺ Opnieuw</button>
-      </div>
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function activeerTab(modus) {
+  state.modus = modus;
+  tabCategorie.classList.toggle('active', modus === 'categorie');
+  tabEigen.classList.toggle('active', modus === 'eigen');
+  tabCategorie.setAttribute('aria-selected', modus === 'categorie');
+  tabEigen.setAttribute('aria-selected', modus === 'eigen');
+  panelCategorie.classList.toggle('active', modus === 'categorie');
+  panelEigen.classList.toggle('active', modus === 'eigen');
+  updateStartKnop();
+}
 
-    </div>
-    <!-- /flits-panel -->
+tabCategorie.addEventListener('click', () => activeerTab('categorie'));
+tabEigen.addEventListener('click',     () => activeerTab('eigen'));
 
-  </main>
+// ── Alles / Wis knoppen ───────────────────────────────────────────────────
+btnAlles.addEventListener('click', () => {
+  categorieLijst.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+  categorieLijst.querySelectorAll('.cat-item').forEach(item => item.classList.add('geselecteerd'));
+  updateActieveLijst();
+});
 
-  <script src="app.js"></script>
-</body>
-</html>
+btnGeen.addEventListener('click', () => {
+  categorieLijst.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+  categorieLijst.querySelectorAll('.cat-item').forEach(item => item.classList.remove('geselecteerd'));
+  updateActieveLijst();
+});
+
+// ── Eigen woorden ─────────────────────────────────────────────────────────
+btnVergrendel.addEventListener('click', () => {
+  const invoer = eigenInvoer.value.trim();
+  if (!invoer) { eigenInvoer.focus(); return; }
+
+  const woorden = invoer
+    .split(/[\n,]+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 0);
+
+  if (woorden.length === 0) { eigenInvoer.focus(); return; }
+
+  state.actiefeLijst = woorden;
+  state.eigenVergrendeld = true;
+  // koppel herkende eigen woorden aan hun spellingregel uit de database
+  state.woordRegelMap = {};
+  let herkend = 0;
+  woorden.forEach(w => {
+    const hit = state.globaalRegelMap[normaliseer(w)];
+    if (hit) { state.woordRegelMap[w] = hit; herkend++; }
+  });
+  eigenInvoerWrap.hidden = true;
+  eigenVergrendeld.hidden = false;
+  const aantalEl = $('vergrendeld-aantal');
+  if (aantalEl) aantalEl.textContent = woorden.length;
+  const herkendMsg = $('herkend-msg');
+  if (herkendMsg) {
+    if (herkend > 0) {
+      herkendMsg.innerHTML =
+        `<strong>${herkend}</strong> ${herkend === 1 ? 'woord herkend' : 'woorden herkend'} ` +
+        `\u2014 die tonen automatisch hun spellingregel.`;
+      herkendMsg.hidden = false;
+    } else {
+      herkendMsg.hidden = true;
+    }
+  }
+  updateAantalMax();
+  updateStartKnop();
+});
+
+btnBewerken.addEventListener('click', () => {
+  state.eigenVergrendeld = false;
+  eigenInvoerWrap.hidden = false;
+  eigenVergrendeld.hidden = true;
+  state.actiefeLijst = [];
+  updateStartKnop();
+});
+
+// ── Sliders ───────────────────────────────────────────────────────────────
+function updateRangeFill(el) {
+  const min = parseFloat(el.min), max = parseFloat(el.max);
+  const pct = ((parseFloat(el.value) - min) / (max - min)) * 100;
+  el.style.setProperty('--fill', pct + '%');
+}
+
+sliderFlits.addEventListener('input', () => {
+  state.flitsduur = parseFloat(sliderFlits.value);
+  valFlits.textContent = state.flitsduur.toFixed(1).replace('.', ',');
+  updateRangeFill(sliderFlits);
+});
+sliderPauze.addEventListener('input', () => {
+  state.pauze = parseInt(sliderPauze.value, 10);
+  valPauze.textContent = state.pauze;
+  updateRangeFill(sliderPauze);
+});
+sliderAantal.addEventListener('input', () => {
+  state.aantal = parseInt(sliderAantal.value, 10);
+  valAantal.textContent = state.aantal;
+  updateRangeFill(sliderAantal);
+});
+
+function updateAantalMax() {
+  const max = state.actiefeLijst.length || 15;
+  sliderAantal.max = max;
+  if (state.aantal > max) {
+    state.aantal = max;
+    sliderAantal.value = max;
+    valAantal.textContent = max;
+  }
+  updateRangeFill(sliderAantal);
+}
+
+// ── Start-knop status ─────────────────────────────────────────────────────
+function updateStartKnop() {
+  const klaar =
+    (state.modus === 'categorie' && state.actiefeLijst.length > 0) ||
+    (state.modus === 'eigen' && state.eigenVergrendeld && state.actiefeLijst.length > 0);
+
+  btnStart.disabled = !klaar;
+  startHint.hidden = klaar;
+}
+
+// ── Fisher-Yates shuffle ──────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── Sessie opbouwen ───────────────────────────────────────────────────────
+function bouwSessie() {
+  const geschud = shuffle(state.actiefeLijst);
+  state.sessieLijst = geschud.slice(0, state.aantal);
+  state.huidigIndex = 0;
+  bouwDots();
+}
+
+// ── Stippen-voortgang ──────────────────────────────────────────────────────
+function bouwDots() {
+  if (!voortgangDots) return;
+  voortgangDots.innerHTML = '';
+  state.sessieLijst.forEach(() => {
+    const d = document.createElement('span');
+    d.className = 'dot';
+    voortgangDots.appendChild(d);
+  });
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────
+btnStart.addEventListener('click', () => {
+  bouwSessie();
+  setupPanel.hidden = true;
+  flitsPanel.hidden = false;
+  toonFlits();
+});
+
+// ── Stop / Opnieuw ────────────────────────────────────────────────────────
+btnStop.addEventListener('click', naarSetup);
+btnTerugKlaar.addEventListener('click', naarSetup);
+
+function naarSetup() {
+  stopCountdown();
+  verbergAlleFases();
+  flitsPanel.hidden = true;
+  setupPanel.hidden = false;
+  resetWoord();
+}
+
+function resetWoord() {
+  flitsWoord.classList.remove('zichtbaar', 'antwoord', 'klaar-woord');
+  flitsScherm.classList.remove('antwoord-modus', 'flitsen', 'klaar-modus');
+  flitsWoord.style.fontSize = '';
+  flitsWoord.textContent = '';
+}
+
+// ── Positieve afsluiters (wisselen af) ─────────────────────────────────
+const KLAAR_TEKSTEN = [
+  'Goed gedaan!', 'Knap werk!', 'Top gedaan!', 'Petje af!', 'Geweldig!',
+  'Klasse!', 'Super geflitst!', 'Helemaal top!',
+  'Hoera!', 'Lekker bezig!', 'Wat goed!'
+];
+function kiesCloser() {
+  let i;
+  do { i = Math.floor(Math.random() * KLAAR_TEKSTEN.length); }
+  while (KLAAR_TEKSTEN.length > 1 && i === state.laatsteCloser);
+  state.laatsteCloser = i;
+  return KLAAR_TEKSTEN[i];
+}
+function toonKlaarWoord() {
+  flitsWoord.classList.remove('antwoord');
+  flitsScherm.classList.remove('antwoord-modus');
+  flitsScherm.classList.add('klaar-modus');
+  flitsWoord.style.fontSize = '';
+  flitsWoord.textContent = kiesCloser();
+  flitsWoord.classList.add('klaar-woord', 'zichtbaar');
+}
+
+btnOpnieuw.addEventListener('click', () => {
+  stopCountdown();
+  bouwSessie();
+  verbergAlleFases();
+  resetWoord();
+  toonFlits();
+});
+
+btnOpnieuwKlaar.addEventListener('click', () => {
+  bouwSessie();
+  verbergAlleFases();
+  resetWoord();
+  toonFlits();
+});
+
+// ── Voortgang bijwerken ───────────────────────────────────────────────────
+function updateVoortgang() {
+  const huidig = state.huidigIndex + 1;
+  const totaal = state.sessieLijst.length;
+  voortgangTekst.textContent = `${huidig} / ${totaal}`;
+  progressbar.style.width = `${((huidig - 1) / totaal) * 100}%`;
+  markeerDots(state.huidigIndex);
+}
+
+function markeerDots(activeIndex) {
+  if (!voortgangDots) return;
+  [...voortgangDots.children].forEach((d, i) => {
+    d.classList.toggle('done', i < activeIndex);
+    d.classList.toggle('actief', i === activeIndex);
+  });
+}
+
+// ── Fases tonen/verbergen ─────────────────────────────────────────────────
+function verbergAlleFases() {
+  faseWacht.hidden   = true;
+  faseAntwoord.hidden = true;
+  faseKlaar.hidden   = true;
+}
+
+// ── Automatisch schalen van lang woord ────────────────────────────────────
+function schaalWoord() {
+  flitsWoord.style.fontSize = '';
+  const beschikbaar = flitsWoord.parentElement.clientWidth - 36;
+  if (flitsWoord.scrollWidth > beschikbaar) {
+    const huidig = parseFloat(getComputedStyle(flitsWoord).fontSize);
+    const nieuw  = Math.max(huidig * (beschikbaar / flitsWoord.scrollWidth), 30);
+    flitsWoord.style.fontSize = nieuw + 'px';
+  }
+}
+
+// ── Flits-effect (witte flits) ─────────────────────────────────────────────
+function flitsEffect() {
+  flitsScherm.classList.remove('flitsen');
+  // reflow zodat de animatie opnieuw start
+  void flitsScherm.offsetWidth;
+  flitsScherm.classList.add('flitsen');
+}
+
+// ── Flits tonen ───────────────────────────────────────────────────────────
+function toonFlits() {
+  verbergAlleFases();
+  updateVoortgang();
+
+  const woord = state.sessieLijst[state.huidigIndex];
+  flitsWoord.textContent = woord;
+  schaalWoord();
+  flitsWoord.classList.add('zichtbaar');
+  flitsEffect();
+
+  setTimeout(() => {
+    flitsWoord.classList.remove('zichtbaar', 'antwoord');
+    flitsScherm.classList.remove('antwoord-modus');
+    faseWacht.hidden = false;
+    startCountdown(state.pauze);
+  }, state.flitsduur * 1000);
+}
+
+// ── Countdown ─────────────────────────────────────────────────────────────
+const OMTREK = 2 * Math.PI * 18; // ~113.1
+
+function startCountdown(seconden) {
+  stopCountdown();
+  let over = seconden;
+  ringFg.style.strokeDashoffset = 0;
+  countdownGetal.textContent = over;
+
+  state.countdownInterval = setInterval(() => {
+    over -= 0.25;
+    if (over <= 0) {
+      stopCountdown();
+      countdownGetal.textContent = '0';
+      ringFg.style.strokeDashoffset = OMTREK;
+      return;
+    }
+    countdownGetal.textContent = Math.ceil(over);
+    const verstreken = (seconden - over) / seconden;
+    ringFg.style.strokeDashoffset = verstreken * OMTREK;
+  }, 250);
+}
+
+function stopCountdown() {
+  if (state.countdownInterval) {
+    clearInterval(state.countdownInterval);
+    state.countdownInterval = null;
+  }
+}
+
+// ── Toon antwoord ─────────────────────────────────────────────────────────
+const antwoordRegel = $('antwoord-regel');
+const arNaam = $('ar-naam');
+const arRegel = $('ar-regel');
+
+btnAntwoord.addEventListener('click', () => {
+  stopCountdown();
+  const woord = state.sessieLijst[state.huidigIndex];
+  flitsWoord.textContent = woord;
+  schaalWoord();
+  flitsWoord.classList.add('zichtbaar', 'antwoord');
+  flitsScherm.classList.add('antwoord-modus');
+  // spellingregel tonen (alleen bij categorie-woorden)
+  const info = state.woordRegelMap[woord];
+  if (info) {
+    arNaam.textContent = info.naam;
+    arRegel.textContent = info.regel;
+    antwoordRegel.hidden = false;
+  } else {
+    antwoordRegel.hidden = true;
+  }
+  faseWacht.hidden    = true;
+  faseAntwoord.hidden = false;
+  progressbar.style.width = `${((state.huidigIndex + 1) / state.sessieLijst.length) * 100}%`;
+});
+
+// ── Volgend woord ─────────────────────────────────────────────────────────
+btnVolgende.addEventListener('click', () => {
+  state.huidigIndex++;
+  if (state.huidigIndex >= state.sessieLijst.length) {
+    verbergAlleFases();
+    toonKlaarWoord();
+    progressbar.style.width = '100%';
+    markeerDots(state.sessieLijst.length);
+    voortgangTekst.textContent = `${state.sessieLijst.length} / ${state.sessieLijst.length}`;
+    if (klaarScore) klaarScore.textContent = state.sessieLijst.length;
+    faseKlaar.hidden = false;
+    vierConfetti();
+    return;
+  }
+  resetWoord();
+  toonFlits();
+});
+
+// ── Confetti ───────────────────────────────────────────────────────────────
+const confettiCanvas = $('confetti-canvas');
+let confettiCtx = confettiCanvas ? confettiCanvas.getContext('2d') : null;
+let confettiStukken = [];
+let confettiRaf = null;
+
+function vierConfetti() {
+  if (!confettiCtx) return;
+  const kleuren = ['#25b7e8', '#f28a2e', '#8c5fd3', '#38b24a', '#f2b632', '#e64b6b'];
+  resizeConfetti();
+  const W = confettiCanvas.width, H = confettiCanvas.height;
+  confettiStukken = [];
+  const n = 150;
+  for (let i = 0; i < n; i++) {
+    confettiStukken.push({
+      x: W / 2 + (Math.random() - 0.5) * W * 0.5,
+      y: H * 0.35 + (Math.random() - 0.5) * 60,
+      vx: (Math.random() - 0.5) * 14,
+      vy: Math.random() * -16 - 4,
+      g: 0.35 + Math.random() * 0.2,
+      size: 7 + Math.random() * 8,
+      kleur: kleuren[(Math.random() * kleuren.length) | 0],
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.4,
+      leven: 0,
+      max: 120 + Math.random() * 60,
+    });
+  }
+  if (confettiRaf) cancelAnimationFrame(confettiRaf);
+  tickConfetti();
+}
+
+function resizeConfetti() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+
+function tickConfetti() {
+  const W = confettiCanvas.width, H = confettiCanvas.height;
+  confettiCtx.clearRect(0, 0, W, H);
+  let levend = false;
+  confettiStukken.forEach(p => {
+    p.leven++;
+    if (p.leven > p.max) return;
+    levend = true;
+    p.vy += p.g;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.99;
+    p.rot += p.vr;
+    const alpha = Math.max(0, 1 - (p.leven / p.max));
+    confettiCtx.save();
+    confettiCtx.globalAlpha = alpha;
+    confettiCtx.translate(p.x, p.y);
+    confettiCtx.rotate(p.rot);
+    confettiCtx.fillStyle = p.kleur;
+    confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+    confettiCtx.restore();
+  });
+  if (levend) {
+    confettiRaf = requestAnimationFrame(tickConfetti);
+  } else {
+    confettiCtx.clearRect(0, 0, W, H);
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (confettiStukken.length) resizeConfetti();
+});
+
+// ── Volledig scherm (digibord) ──────────────────────────────────────────────
+const btnFullscreen = $('btn-fullscreen');
+if (btnFullscreen) {
+  btnFullscreen.addEventListener('click', () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen && document.exitFullscreen();
+    } else {
+      const el = document.documentElement;
+      (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    btnFullscreen.classList.toggle('actief', !!document.fullscreenElement);
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+laadWoorden();
+[sliderFlits, sliderPauze, sliderAantal].forEach(updateRangeFill);
